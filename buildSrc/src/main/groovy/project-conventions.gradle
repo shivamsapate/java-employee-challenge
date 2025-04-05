@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot'
     id 'com.diffplug.spotless'
+    id 'io.spring.dependency-management'
 }
 
 group = 'com.reliaquest'
@@ -26,6 +27,7 @@ configurations {
 dependencies {
     implementation platform(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 
     compileOnly 'org.projectlombok:lombok'
 
@@ -43,5 +45,11 @@ spotless {
         removeUnusedImports()
         palantirJavaFormat()
         formatAnnotations()
+    }
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:2023.0.0"
     }
 }
