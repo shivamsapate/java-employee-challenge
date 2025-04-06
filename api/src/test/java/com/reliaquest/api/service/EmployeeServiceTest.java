@@ -1,6 +1,7 @@
 package com.reliaquest.api.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.reliaquest.api.exception.CustomError;
 import com.reliaquest.api.exception.CustomException;
 import com.reliaquest.api.exception.ValidationException;
 import com.reliaquest.api.external.EmployeeAPIs;
@@ -8,7 +9,6 @@ import com.reliaquest.api.models.Employee;
 import com.reliaquest.api.request.EmployeeRequest;
 import com.reliaquest.api.response.DeleteEmployeeResponse;
 import feign.Request;
-import feign.RequestTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,14 +16,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,14 +27,10 @@ class EmployeeServiceTest {
     @Mock
     private EmployeeAPIs employeeApis;
 
-    @Mock
-    private ObjectMapper objectMapper;
-
     @InjectMocks
     private EmployeeService employeeService;
 
     private Employee employee;
-    private Request request;
 
 
     @BeforeEach
@@ -110,12 +101,12 @@ class EmployeeServiceTest {
 
     @Test
     void submitEmployee_ShouldConvertAndSubmitEmployee() {
-        EmployeeRequest employeeRequest = new EmployeeRequest("Shivam Sapate", 50000, 25, "Software Engineer");
+        Map<String, Object> employeeMap = Map.of("name", "Shivam Sapate", "salary", 50000, "age", 25, "title", "Engineer", "email", "shivam@company.com");
+        EmployeeRequest employeeRequest = new EmployeeRequest("Shivam Sapate", 50000, 25, "Engineer");
 
-        when(objectMapper.convertValue(any(), eq(EmployeeRequest.class))).thenReturn(employeeRequest);
         when(employeeApis.submitEmployee(employeeRequest)).thenReturn(employee);
 
-        Employee result = employeeService.submitEmployee(new Object());
+        Employee result = employeeService.submitEmployee(employeeMap);
         assertEquals("Shivam Sapate", result.getName());
         assertEquals("123", result.getId());
     }
@@ -127,33 +118,153 @@ class EmployeeServiceTest {
         assertEquals(response, employeeService.deleteEmployeeById("1"));
     }
 
+
     @Test
-    void validateEmployeeRequest_ShouldThrowExceptionForInvalidAge() {
-        EmployeeRequest employeeRequest = new EmployeeRequest("Shivam Sapate", 50000, -1, "Software Engineer");
-        when(objectMapper.convertValue(any(), eq(EmployeeRequest.class))).thenReturn(employeeRequest);
-        assertThrows(ValidationException.class, () -> employeeService.submitEmployee(employeeRequest));
+    void ValidateInput_Success() throws ValidationException {
+        Map<String, Object> employeeInput = new HashMap<>();
+        employeeInput.put("name", "Shivam Sapate");
+        employeeInput.put("age", 40);
+        employeeInput.put("salary", 70000);
+        employeeInput.put("title", "Accountant");
+
+        EmployeeRequest result = employeeService.validateEmployeeRequest(employeeInput);
+
+        assertNotNull(result);
+        assertEquals(70000, result.getSalary());
+        assertEquals(40, result.getAge());
+        assertEquals("Accountant", result.getTitle());
+    }
+
+
+    @Test
+    void ValidateInput_MissingName() {
+        Map<String, Object> employeeInput = new HashMap<>();
+        employeeInput.put("age", 40);
+        employeeInput.put("salary", 70000);
+        employeeInput.put("title", "Accountant");
+
+        ValidationException exception = assertThrows(ValidationException.class, () -> {
+            employeeService.validateEmployeeRequest(employeeInput);
+        });
+
+        assertEquals(CustomError.MISSING_OR_INVALID_NAME, exception.getError());
     }
 
     @Test
-    void validateEmployeeRequest_ShouldThrowExceptionForInvalidSalary() {
-        EmployeeRequest employeeRequest = new EmployeeRequest("Shivam Sapate", -1, 30, "Software Engineer");
-        when(objectMapper.convertValue(any(), eq(EmployeeRequest.class))).thenReturn(employeeRequest);
-        assertThrows(ValidationException.class, () -> employeeService.submitEmployee(employeeRequest));
+    void ValidateInput_BlankName() throws ValidationException {
+        Map<String, Object> employeeInput = new HashMap<>();
+        employeeInput.put("name", "");
+        employeeInput.put("age", 40);
+        employeeInput.put("salary", 70000);
+        employeeInput.put("title", "Accountant");
+
+        ValidationException exception = assertThrows(ValidationException.class, () -> {
+            employeeService.validateEmployeeRequest(employeeInput);
+        });
+
+        assertEquals(CustomError.MISSING_OR_INVALID_NAME, exception.getError());
     }
 
     @Test
-    void validateEmployeeRequest_ShouldThrowExceptionForInvalidName() {
-        EmployeeRequest employeeRequest = new EmployeeRequest(null, 5000, 30, "Software Engineer");
-        when(objectMapper.convertValue(any(), eq(EmployeeRequest.class))).thenReturn(employeeRequest);
-        assertThrows(ValidationException.class, () -> employeeService.submitEmployee(employeeRequest));
+    void ValidateInput_MissingAge() throws ValidationException {
+        Map<String, Object> employeeInput = new HashMap<>();
+        employeeInput.put("name", "Shivam Sapate");
+        employeeInput.put("salary", 70000);
+        employeeInput.put("title", "Accountant");
+
+        ValidationException exception = assertThrows(ValidationException.class, () -> {
+            employeeService.validateEmployeeRequest(employeeInput);
+        });
+
+        assertEquals(CustomError.MISSING_OR_INVALID_AGE, exception.getError());
     }
 
     @Test
-    void validateEmployeeRequest_ShouldThrowExceptionForInvalidTitle() {
-        EmployeeRequest employeeRequest = new EmployeeRequest("Shivam Sapate", -1, 30, null);
-        when(objectMapper.convertValue(any(), eq(EmployeeRequest.class))).thenReturn(employeeRequest);
-        assertThrows(ValidationException.class, () -> employeeService.submitEmployee(employeeRequest));
+    void ValidateInput_MinimumAge() throws ValidationException {
+        Map<String, Object> employeeInput = new HashMap<>();
+        employeeInput.put("name", "Shivam Sapate");
+        employeeInput.put("age", 10);
+        employeeInput.put("salary", 70000);
+        employeeInput.put("title", "Accountant");
+
+        ValidationException exception = assertThrows(ValidationException.class, () -> {
+            employeeService.validateEmployeeRequest(employeeInput);
+        });
+
+        assertEquals(CustomError.INVALID_AGE_LIMIT, exception.getError());
     }
 
+    @Test
+    void ValidateInput_MaximumAge() throws ValidationException {
+        Map<String, Object> employeeInput = new HashMap<>();
+        employeeInput.put("name", "Shivam Sapate");
+        employeeInput.put("age", 100);
+        employeeInput.put("salary", 70000);
+        employeeInput.put("title", "Accountant");
+
+        ValidationException exception = assertThrows(ValidationException.class, () -> {
+            employeeService.validateEmployeeRequest(employeeInput);
+        });
+
+        assertEquals(CustomError.INVALID_AGE_LIMIT, exception.getError());
+    }
+
+    @Test
+    void ValidateInput_MissingSalary() throws ValidationException {
+        Map<String, Object> employeeInput = new HashMap<>();
+        employeeInput.put("name", "Shivam Sapate");
+        employeeInput.put("age", 100);
+        employeeInput.put("title", "Accountant");
+
+        ValidationException exception = assertThrows(ValidationException.class, () -> {
+            employeeService.validateEmployeeRequest(employeeInput);
+        });
+
+        assertEquals(CustomError.MISSING_OR_INVALID_SALARY, exception.getError());
+    }
+
+    @Test
+    void ValidateInput_MinimumSalary() throws ValidationException {
+        Map<String, Object> employeeInput = new HashMap<>();
+        employeeInput.put("name", "Shivam Sapate");
+        employeeInput.put("age", 100);
+        employeeInput.put("salary", -200);
+        employeeInput.put("title", "Accountant");
+
+        ValidationException exception = assertThrows(ValidationException.class, () -> {
+            employeeService.validateEmployeeRequest(employeeInput);
+        });
+
+        assertEquals(CustomError.NEGATIVE_SALARY_NOT_ALLOWED, exception.getError());
+    }
+
+    @Test
+    void ValidateInput_MissingTitle() throws ValidationException {
+        Map<String, Object> employeeInput = new HashMap<>();
+        employeeInput.put("name", "Shivam Sapate");
+        employeeInput.put("age", 30);
+        employeeInput.put("salary", 200);
+
+        ValidationException exception = assertThrows(ValidationException.class, () -> {
+            employeeService.validateEmployeeRequest(employeeInput);
+        });
+
+        assertEquals(CustomError.MISSING_TITLE, exception.getError());
+    }
+
+    @Test
+    void ValidateInput_BlankTitle() throws ValidationException {
+        Map<String, Object> employeeInput = new HashMap<>();
+        employeeInput.put("name", "Shivam Sapate");
+        employeeInput.put("age", 30);
+        employeeInput.put("salary", 2000);
+        employeeInput.put("title", "");
+
+        ValidationException exception = assertThrows(ValidationException.class, () -> {
+            employeeService.validateEmployeeRequest(employeeInput);
+        });
+
+        assertEquals(CustomError.MISSING_TITLE, exception.getError());
+    }
 
 }

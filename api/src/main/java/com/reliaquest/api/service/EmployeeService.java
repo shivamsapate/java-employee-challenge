@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -79,10 +80,11 @@ public class EmployeeService {
     }
 
     public Employee submitEmployee(Object employeeObject){
-        EmployeeRequest employeeRequest = objectMapper.convertValue(employeeObject, EmployeeRequest.class);
-        log.info("Submit employee request {}", employeeRequest);
+        Map<String, Object> employeeMap = (Map<String, Object>) employeeObject;
+        log.info("Submit employee request {}", employeeMap);
 
-        validateEmployeeRequest(employeeRequest);
+        EmployeeRequest employeeRequest = validateEmployeeRequest(employeeMap);
+
 
         Employee employee = employeeApis.submitEmployee(employeeRequest);
         log.info("Details of newly created employee {}", employee);
@@ -97,36 +99,41 @@ public class EmployeeService {
         return employeeApis.deleteEmployee(id);
     }
 
-    private void validateEmployeeRequest(EmployeeRequest request){
-        log.info("validating employee request {}", request);
+    public EmployeeRequest validateEmployeeRequest(Map<String, Object> employeeInput) throws ValidationException {
+        log.info("Validation started for create employee request body");
 
-        if(Objects.isNull(request.getName()) || request.getName().isEmpty()){
-            log.info("validation failed reason: {}", CustomError.MISSING_OR_INVALID_NAME.getMessage());
+        if (!employeeInput.containsKey("name") || !(employeeInput.get("name") instanceof String) ||
+                ((String) employeeInput.get("name")).isBlank()) {
             throw new ValidationException(CustomError.MISSING_OR_INVALID_NAME);
         }
 
-        if(Objects.isNull(request.getSalary())){
-            log.info("validation failed reason: {}", CustomError.MISSING_OR_INVALID_SALARY.getMessage());
+        if (!employeeInput.containsKey("salary") || !(employeeInput.get("salary") instanceof Integer)) {
             throw new ValidationException(CustomError.MISSING_OR_INVALID_SALARY);
-        }else if( request.getSalary() < 0){
-            log.info("validation failed reason: {}", CustomError.NEGATIVE_SALARY_NOT_ALLOWED.getMessage());
+        }
+
+        if ((Integer) employeeInput.get("salary") < 0) {
             throw new ValidationException(CustomError.NEGATIVE_SALARY_NOT_ALLOWED);
         }
 
-        if(Objects.isNull(request.getAge())){
-            log.info("validation failed reason: {}", CustomError.MISSING_OR_INVALID_AGE.getMessage());
+        if (!employeeInput.containsKey("age") || !(employeeInput.get("age") instanceof Integer)) {
             throw new ValidationException(CustomError.MISSING_OR_INVALID_AGE);
-        }else if( request.getAge() < 0){
-            log.info("validation failed reason: {}", CustomError.NEGATIVE_AGE_NOT_ALLOWED.getMessage());
-            throw new ValidationException(CustomError.NEGATIVE_AGE_NOT_ALLOWED);
-        } else if(request.getAge() < 15 || request.getAge() > 76){
-            log.info("validation failed reason: {}", CustomError.INVALID_AGE_LIMIT.getMessage());
+        }
+
+        if ((Integer) employeeInput.get("age") < 16 || (Integer) employeeInput.get("age") > 75) {
             throw new ValidationException(CustomError.INVALID_AGE_LIMIT);
         }
 
-        if(Objects.isNull(request.getTitle())){
-            log.info("validation failed reason {}", CustomError.INVALID_AGE_LIMIT.getMessage());
-            throw new ValidationException(CustomError.MISSING_TITLE);
+        if (!employeeInput.containsKey("title") || !(employeeInput.get("title") instanceof String) ||
+                ((String) employeeInput.get("title")).isBlank()) {
+            throw new ValidationException(CustomError.MISSING_OR_INVALID_TITLE);
         }
+        log.info("Validation successful for create employee input");
+
+        return EmployeeRequest.builder()
+                .name((String) employeeInput.get("name"))
+                .age((Integer) employeeInput.get("age"))
+                .salary((Integer) employeeInput.get("salary"))
+                .title((String) employeeInput.get("title"))
+                .build();
     }
 }
