@@ -53,6 +53,9 @@ public class EmployeeAPIs {
         } catch (FeignException.TooManyRequests e) {
             log.error("Error fetching employees: {}", e.getMessage(), e);
             throw new TooManyRequestException(CustomError.EMPLOYEE_API_RATE_LIMIT_EXCEEDED);
+        } catch (FeignException e) {
+            log.error("Error fetching employees: {}", e.getMessage(), e);
+            throw new CustomException(CustomError.REST_API_CALL_FAILURE);
         }
     }
 

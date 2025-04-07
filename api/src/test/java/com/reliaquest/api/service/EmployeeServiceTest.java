@@ -249,7 +249,7 @@ class EmployeeServiceTest {
             employeeService.validateEmployeeRequest(employeeInput);
         });
 
-        assertEquals(CustomError.MISSING_TITLE, exception.getError());
+        assertEquals(CustomError.MISSING_OR_INVALID_TITLE, exception.getError());
     }
 
     @Test
@@ -264,7 +264,7 @@ class EmployeeServiceTest {
             employeeService.validateEmployeeRequest(employeeInput);
         });
 
-        assertEquals(CustomError.MISSING_TITLE, exception.getError());
+        assertEquals(CustomError.MISSING_OR_INVALID_TITLE, exception.getError());
     }
 
 }
