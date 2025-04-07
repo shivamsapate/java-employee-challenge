@@ -40,7 +40,7 @@ public class EmployeeControllerAdvice {
         Map<String, String> errorResponse = new HashMap<>();
         errorResponse.put("error", ex.getError().getCode());
         errorResponse.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+        return ResponseEntity.status(ex.getStatusCode()).body(errorResponse);
     }
 
     @ExceptionHandler(Exception.class)

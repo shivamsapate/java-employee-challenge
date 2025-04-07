@@ -1,6 +1,5 @@
 package com.reliaquest.api.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.reliaquest.api.exception.CustomError;
 import com.reliaquest.api.exception.CustomException;
 import com.reliaquest.api.exception.ValidationException;
@@ -8,7 +7,6 @@ import com.reliaquest.api.external.EmployeeAPIs;
 import com.reliaquest.api.models.Employee;
 import com.reliaquest.api.request.EmployeeRequest;
 import com.reliaquest.api.response.DeleteEmployeeResponse;
-import feign.Request;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

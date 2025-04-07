@@ -13,6 +13,7 @@ import com.reliaquest.api.response.GetEmployeeResponse;
 import feign.FeignException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -36,7 +37,7 @@ public class EmployeeAPIs {
             throw new TooManyRequestException(CustomError.EMPLOYEE_API_RATE_LIMIT_EXCEEDED);
         } catch (FeignException e) {
             log.error("Error fetching employees: {}", e.getMessage(), e);
-            throw new CustomException(CustomError.REST_API_CALL_FAILURE);
+            throw new CustomException(CustomError.REST_API_CALL_FAILURE, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -49,13 +50,13 @@ public class EmployeeAPIs {
             return response.getData();
         } catch (FeignException.NotFound e) {
             log.error("Employee not found with ID: {}", id);
-            throw new CustomException(CustomError.EMPLOYEE_NOT_FOUNT_BY_ID); // Add this enum if not present
+            throw new CustomException(CustomError.EMPLOYEE_NOT_FOUNT_BY_ID, HttpStatus.NOT_FOUND);
         } catch (FeignException.TooManyRequests e) {
             log.error("Error fetching employees: {}", e.getMessage(), e);
             throw new TooManyRequestException(CustomError.EMPLOYEE_API_RATE_LIMIT_EXCEEDED);
         } catch (FeignException e) {
             log.error("Error fetching employees: {}", e.getMessage(), e);
-            throw new CustomException(CustomError.REST_API_CALL_FAILURE);
+            throw new CustomException(CustomError.REST_API_CALL_FAILURE, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -67,7 +68,7 @@ public class EmployeeAPIs {
             return response.getData();
         }  catch (FeignException e) {
             log.error("Error fetching employees: {}", e.getMessage(), e);
-            throw new CustomException(CustomError.REST_API_CALL_FAILURE);
+            throw new CustomException(CustomError.REST_API_CALL_FAILURE, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -86,9 +87,12 @@ public class EmployeeAPIs {
         } catch (FeignException.TooManyRequests e) {
             log.error("Employee rate limit reached : {}", e.getMessage(), e);
             throw new TooManyRequestException(CustomError.EMPLOYEE_API_RATE_LIMIT_EXCEEDED);
+        } catch (FeignException.NotFound e) {
+            log.error("Employee not found with ID: {}", id);
+            throw new CustomException(CustomError.EMPLOYEE_NOT_FOUNT_BY_ID, HttpStatus.NOT_FOUND);
         } catch (FeignException e) {
             log.error("Error fetching employees: {}", e.getMessage(), e);
-            throw new CustomException(CustomError.REST_API_CALL_FAILURE);
+            throw new CustomException(CustomError.REST_API_CALL_FAILURE, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

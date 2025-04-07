@@ -10,6 +10,7 @@ import com.reliaquest.api.request.EmployeeRequest;
 import com.reliaquest.api.response.DeleteEmployeeResponse;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -29,7 +30,7 @@ public class EmployeeService {
     public List<Employee> getAllEmployees() {
         List<Employee> allEmployees = employeeApis.getAllEmployees();
         if(allEmployees.isEmpty()){
-            throw new CustomException(CustomError.NO_EMPLOYEES_FOUND);
+            throw new CustomException(CustomError.NO_EMPLOYEES_FOUND, HttpStatus.NOT_FOUND);
         }
 
         log.info("List of Employees details {}", allEmployees);
@@ -38,11 +39,11 @@ public class EmployeeService {
 
     public Employee getEmployeeById(String id) {
         if(Objects.isNull(id)){
-            throw new CustomException(CustomError.NULL_EMPLOYEE_ID);
+            throw new CustomException(CustomError.NULL_EMPLOYEE_ID, HttpStatus.BAD_REQUEST);
         }
         Employee employee = employeeApis.getEmployeeById(id);
         if(Objects.isNull(employee)){
-            throw new CustomException(CustomError.NO_EMPLOYEES_FOUND);
+            throw new CustomException(CustomError.NO_EMPLOYEES_FOUND, HttpStatus.NOT_FOUND);
         }
         log.info("Employee details {}", employee);
         return employee;
@@ -54,7 +55,7 @@ public class EmployeeService {
                 .filter(employee -> employee.getName().contains(name))
                 .collect(Collectors.toList());
         if(employeesFoundByName.isEmpty()) {
-            throw new CustomException(CustomError.EMPLOYEE_NOT_FOUND_BY_NAME);
+            throw new CustomException(CustomError.EMPLOYEE_NOT_FOUND_BY_NAME, HttpStatus.NOT_FOUND);
         }
         log.info("Employees with name {} are : {}", name, employeesFoundByName);
         return employeesFoundByName;

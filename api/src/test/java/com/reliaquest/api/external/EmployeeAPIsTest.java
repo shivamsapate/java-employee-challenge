@@ -18,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 import java.util.List;
 import java.util.Map;
@@ -103,6 +104,7 @@ class EmployeeAPIsTest {
 
         CustomException ex = assertThrows(CustomException.class, () -> employeeAPIs.getEmployeeById("1"));
         assertEquals(CustomError.EMPLOYEE_NOT_FOUNT_BY_ID, ex.getError());
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }
 
     @Test
@@ -121,6 +123,7 @@ class EmployeeAPIsTest {
 
         CustomException ex = assertThrows(CustomException.class, () -> employeeAPIs.getEmployeeById("1"));
         assertEquals(CustomError.REST_API_CALL_FAILURE, ex.getError());
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ex.getStatusCode());
     }
 
     @Test
@@ -140,6 +143,7 @@ class EmployeeAPIsTest {
 
         CustomException ex = assertThrows(CustomException.class, () -> employeeAPIs.submitEmployee(employeeRequest));
         assertEquals(CustomError.REST_API_CALL_FAILURE, ex.getError());
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ex.getStatusCode());
     }
 
     @Test
@@ -175,6 +179,7 @@ class EmployeeAPIsTest {
 
         CustomException ex = assertThrows(CustomException.class, () -> employeeAPIs.deleteEmployee("1"));
         assertEquals(CustomError.EMPLOYEE_NOT_FOUNT_BY_ID, ex.getError());
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }
 
     @Test
@@ -182,10 +187,11 @@ class EmployeeAPIsTest {
         request = Request.create(Request.HttpMethod.GET, "/api/v1/employee",
                 Map.of(), null, new RequestTemplate());
 
-        FeignException exception = new FeignException.InternalServerError("Not found", request, null, null);
+        FeignException exception = new FeignException.InternalServerError("Internal Server Error", request, null, null);
         when(employeeClient.getEmployeeById(anyString())).thenThrow(exception);
 
         CustomException ex = assertThrows(CustomException.class, () -> employeeAPIs.deleteEmployee("1"));
         assertEquals(CustomError.REST_API_CALL_FAILURE, ex.getError());
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ex.getStatusCode());
     }
 }
